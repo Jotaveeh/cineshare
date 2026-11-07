@@ -22,7 +22,7 @@ function getServerUrl() {
   } catch (e) {
     console.error('Erro ao ler config.json:', e);
   }
-  return 'http://localhost:3000';
+  return 'https://cineshare-1.onrender.com';
 }
 
 const SERVER_URL = getServerUrl().replace(/\/+$/, '');
