@@ -5,3 +5,4 @@ contextBridge.exposeInMainWorld('picker', {
   choose: (id, withAudio) => ipcRenderer.send('picker:choose', { id, withAudio }),
   cancel: () => ipcRenderer.send('picker:cancel')
 });
+
