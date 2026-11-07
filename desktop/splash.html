@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'unsafe-inline'; script-src 'unsafe-inline'">
+  <title>CineShare</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
+    body {
+      height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;
+      color: #f3f4f6; user-select: none;
+      background: radial-gradient(circle at 50% 20%, rgba(139,92,246,0.15), transparent 60%),
+                  radial-gradient(circle at 80% 80%, rgba(229,9,20,0.1), transparent 50%), #0a0b10;
+    }
+    .logo { font-size: 4rem; animation: float 3s ease-in-out infinite; }
+    h1 { font-size: 1.8rem; font-weight: 800; }
+    .spinner { width: 34px; height: 34px; border: 3px solid rgba(255,255,255,0.15); border-top-color: #e50914; border-radius: 50%; animation: spin 0.9s linear infinite; }
+    #status { color: #9ca3af; font-size: 0.95rem; text-align: center; max-width: 420px; }
+    #status.error { color: #fca5a5; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+  </style>
+</head>
+<body>
+  <div class="logo">🍿</div>
+  <h1>CineShare</h1>
+  <div class="spinner" id="spinner"></div>
+  <div id="status">Iniciando...</div>
+  <script>
+    window.setStatus = (text, isError) => {
+      const el = document.getElementById('status');
+      el.textContent = text;
+      el.classList.toggle('error', !!isError);
+      if (isError) document.getElementById('spinner').style.display = 'none';
+    };
+  </script>
+</body>
+</html>

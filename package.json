@@ -1,0 +1,14 @@
+{
+  "name": "cineshare",
+  "version": "1.0.0",
+  "description": "App para compartilhar tela e assistir filmes a dois com áudio de alta qualidade e chat de voz",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "socket.io": "^4.8.1"
+  }
+}
+

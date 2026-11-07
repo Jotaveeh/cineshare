@@ -1,0 +1,41 @@
+{
+  "name": "cineshare-desktop",
+  "version": "1.0.0",
+  "description": "CineShare - Cinema privado a dois (app desktop)",
+  "main": "main.js",
+  "author": "CineShare",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win nsis"
+  },
+  "devDependencies": {
+    "electron": "^45.2.3",
+    "electron-builder": "^26.18.0"
+  },
+  "build": {
+    "appId": "com.cineshare.desktop",
+    "productName": "CineShare",
+    "files": [
+      "main.js",
+      "preload-picker.js",
+      "picker.html",
+      "splash.html",
+      "config.json"
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "CineShare",
+      "artifactName": "CineShare-Setup-${version}.exe"
+    }
+  }
+}

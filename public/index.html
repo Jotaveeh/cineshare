@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CineShare - Sessão de Cinema a Dois 🍿</title>
+  <link rel="stylesheet" href="style.css?v=2.0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+  <!-- Container de Reações Flutuantes -->
+  <div id="reactions-container" class="reactions-container"></div>
+
+  <!-- TELA 1: LOBBY DE ENTRADA -->
+  <main id="lobby-view" class="view-active">
+    <div class="lobby-card glass">
+      <div class="logo-badge">
+        <span class="logo-icon">🍿</span>
+        <span>CineShare</span>
+      </div>
+      <h1>Cinema Privado a Dois</h1>
+      <p class="subtitle">Compartilhe sua tela em alta definição, converse por voz e assista a filmes juntos em tempo real.</p>
+
+      <form id="join-form" class="join-form">
+        <div class="form-group">
+          <label for="username-input">Seu Nome / Apelido</label>
+          <input type="text" id="username-input" placeholder="Ex: Meu Amor, João..." required autofocus maxlength="25">
+        </div>
+
+        <div class="form-group">
+          <label for="room-input">Código da Sala</label>
+          <div class="input-with-button">
+            <input type="text" id="room-input" placeholder="Ex: sessao-pipoca" required maxlength="30">
+            <button type="button" id="btn-random-room" class="btn-secondary" title="Gerar código aleatório">🎲</button>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-primary btn-large">
+          <span>Entrar no Cinema</span>
+          <span class="btn-arrow">→</span>
+        </button>
+      </form>
+
+      <div class="lobby-footer">
+        <span class="badge-tag">🔒 Conexão Peer-to-Peer</span>
+        <span class="badge-tag">🔊 Áudio do Filme + Microfone</span>
+        <span class="badge-tag">⚡ Baixa Latência</span>
+      </div>
+    </div>
+  </main>
+
+  <!-- TELA 2: SALA DE CINEMA -->
+  <div id="room-view" class="room-view">
+    <!-- Cabeçalho Superior -->
+    <header class="room-header">
+      <div class="header-left">
+        <div class="logo-badge compact">
+          <span class="logo-icon">🍿</span>
+          <span class="logo-text">CineShare</span>
+        </div>
+        <div class="room-info-pill">
+          <span class="status-dot pulsing" id="connection-status-dot"></span>
+          <span id="room-name-display">Sala: ...</span>
+        </div>
+      </div>
+
+      <div class="header-center">
+        <div class="partner-badge" id="partner-status">
+          <span class="partner-icon">⏳</span>
+          <span id="partner-name">Aguardando seu par entrar...</span>
+        </div>
+      </div>
+
+      <div class="header-right">
+        <button id="btn-copy-link" class="btn-pill" title="Copiar link para enviar">
+          <span>🔗 Convidar</span>
+        </button>
+        <button id="btn-tips" class="btn-pill btn-ghost" title="Dicas para Netflix e Áudio">
+          <span>💡 Dicas</span>
+        </button>
+        <button id="btn-leave-room" class="btn-pill btn-danger" title="Sair da sala">
+          <span>Sair</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Palco Principal (Vídeo) -->
+    <div class="theater-stage" id="theater-stage">
+      <div class="video-container" id="video-container">
+        <!-- Vídeo da Tela Compartilhada -->
+        <video id="screen-video" autoplay playsinline></video>
+
+        <!-- Elementos de Áudio Dedicados -->
+        <audio id="screen-audio" autoplay playsinline></audio>
+        <audio id="remote-voice-audio" autoplay playsinline></audio>
+
+        <!-- Botão de Desmutar caso o navegador bloqueie autoplay com som -->
+        <button id="btn-unmute-overlay" class="btn-unmute-overlay hidden">
+          <span>🔊 Clique para Ativar o Áudio do Filme</span>
+        </button>
+
+        <!-- Placeholder quando ninguém estiver transmitindo -->
+        <div id="video-placeholder" class="video-placeholder">
+          <div class="placeholder-icon">🎬</div>
+          <h2>Ninguém está transmitindo a tela ainda</h2>
+          <p>Clique em <strong>"Compartilhar Tela"</strong> na barra inferior para começar a sessão.</p>
+          <div class="audio-tip-banner">
+            ⚠️ <strong>Atenção:</strong> Ao compartilhar a janela ou aba, marque a caixa <em>"Compartilhar áudio"</em> para que ambos escutem o filme!
+          </div>
+        </div>
+
+        <!-- Indicador de quem está transmitindo -->
+        <div id="sharing-banner" class="sharing-banner hidden">
+          <span class="pulse-red"></span>
+          <span id="sharing-text">Você está transmitindo</span>
+        </div>
+      </div>
+
+      <!-- Barra Lateral de Chat -->
+      <aside id="chat-sidebar" class="chat-sidebar hidden">
+        <div class="chat-header">
+          <h3>Bate-papo 💬</h3>
+          <button id="btn-close-chat" class="btn-icon" title="Fechar">✕</button>
+        </div>
+        <div id="chat-messages" class="chat-messages">
+          <div class="system-message">Bem-vindo(a) à sala! Mandem mensagens ou reações durante o filme.</div>
+        </div>
+        <form id="chat-form" class="chat-form">
+          <input type="text" id="chat-input" placeholder="Digite uma mensagem..." autocomplete="off">
+          <button type="submit" class="btn-send">➤</button>
+        </form>
+      </aside>
+    </div>
+
+    <!-- Barra Inferior de Controles (Player Style) -->
+    <footer class="room-controls-bar">
+      <!-- Grupo 1: Mídia (Tela + Mic) -->
+      <div class="control-group">
+        <button id="btn-share-screen" class="control-btn primary-action" title="Compartilhar Tela">
+          <span class="btn-icon">🖥️</span>
+          <span class="btn-label" id="share-label">Compartilhar Tela</span>
+        </button>
+
+        <button id="btn-toggle-mic" class="control-btn" title="Ligar/Desligar Microfone">
+          <span class="btn-icon" id="mic-icon">🎙️</span>
+          <span class="btn-label" id="mic-label">Voz Ativa</span>
+        </button>
+      </div>
+
+      <!-- Grupo 2: Reações Rápidas -->
+      <div class="control-group reactions-group">
+        <button class="reaction-btn" data-emoji="❤️" title="Amor">❤️</button>
+        <button class="reaction-btn" data-emoji="🍿" title="Pipoca">🍿</button>
+        <button class="reaction-btn" data-emoji="🤣" title="Rindo muito">🤣</button>
+        <button class="reaction-btn" data-emoji="😭" title="Chorando">😭</button>
+        <button class="reaction-btn" data-emoji="😱" title="Susto / Chocado">😱</button>
+        <button class="reaction-btn" data-emoji="🔥" title="Fogo">🔥</button>
+      </div>
+
+      <!-- Grupo 3: Mixers e Extras -->
+      <div class="control-group right-controls">
+        <!-- Controle de Volume do Filme -->
+        <div class="volume-slider-box" title="Volume do Filme">
+          <span class="volume-icon">🎬🔊</span>
+          <input type="range" id="volume-movie" min="0" max="1" step="0.05" value="1">
+          <span class="volume-val" id="vol-movie-val">100%</span>
+        </div>
+
+        <!-- Controle de Volume da Voz da Namorada/Parceiro -->
+        <div class="volume-slider-box voice-box" title="Volume da Voz do Parceiro (com ganho de até 200%)">
+          <span class="volume-icon">🗣️</span>
+          <input type="range" id="volume-voice" min="0" max="2" step="0.1" value="1">
+          <span class="volume-val" id="vol-voice-val">100%</span>
+        </div>
+
+        <button id="btn-toggle-chat" class="control-btn icon-only" title="Abrir Chat">
+          <span>💬</span>
+          <span id="chat-badge" class="badge-dot hidden"></span>
+        </button>
+
+        <button id="btn-fullscreen" class="control-btn icon-only" title="Tela Cheia">
+          <span>⛶</span>
+        </button>
+      </div>
+    </footer>
+  </div>
+
+  <!-- MODAL DE DICAS (DRM / Áudio / Netflix) -->
+  <div id="modal-tips" class="modal-overlay hidden">
+    <div class="modal-card glass">
+      <div class="modal-header">
+        <h2>💡 Dicas para a Melhor Experiência</h2>
+        <button id="btn-close-tips" class="btn-icon">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="tip-item">
+          <h3>🔊 Como transmitir o som do filme perfeitamente:</h3>
+          <p>Ao clicar em <em>Compartilhar Tela</em>, prefira escolher a opção <strong>"Guia do Chrome/Navegador"</strong> ou <strong>"Tela Inteira"</strong> e certifique-se de marcar a caixinha <strong>"Compartilhar áudio do sistema / áudio da guia"</strong>.</p>
+        </div>
+        <div class="tip-item">
+          <h3>🖤 Tela preta na Netflix, Prime Video ou Disney+?</h3>
+          <p>Esses serviços usam proteção contra gravação (DRM). Para resolver facilmente:</p>
+          <ol>
+            <li>No Chrome/Edge, vá em <em>Configurações > Sistema</em>.</li>
+            <li>Desative a opção <strong>"Usar aceleração gráfica / de hardware quando disponível"</strong>.</li>
+            <li>Reinicie o navegador e compartilhe normalmente!</li>
+            <li>Ou assista através do <em>Stremio</em> ou <em>VLC</em> compartilhando a janela do player.</li>
+          </ol>
+        </div>
+        <div class="tip-item">
+          <h3>🗣️ O som do filme está abafando a voz dela?</h3>
+          <p>Use os controles deslizantes na barra inferior: você pode aumentar a voz dela em até <strong>200%</strong> e abaixar o filme para 70%!</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast de Notificação -->
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="app.js?v=2.0"></script>
+</body>
+</html>
+
